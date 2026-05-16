@@ -20,6 +20,10 @@ ModelDock is a local Hugging Face downloader for models, datasets, and Spaces. I
 - Download queue with configurable concurrency
 - Pause, resume, cancel, and retry downloads
 - Live progress, speed, ETA, and task status
+- **Real-time Downloaded Size Tracking:** Live extraction of downloaded vs total file size (e.g., `11.0M/4.48G`) directly from `tqdm` logs, displayed alongside download speed
+- **Clean Startup & Session Recovery:** Automatic pause of interrupted or orphaned downloads on backend startup to ensure a pristine live queue
+- **Intelligent Python Runtime Discovery:** Automatic physical scanning (`fs.existsSync`) of system paths, Scoop installations, and AppData directories for bulletproof ASAR/Electron packaging
+- **Enhanced Log Observability:** Absolute file paths for both Python interpreter and downloader scripts recorded in the live terminal stream
 - Global logs modal with clear logs support
 - README / model card preview with Markdown and HTML rendering
 - Disk space check before queueing downloads
@@ -163,6 +167,8 @@ npm run package:win  # Build Windows installer
 - Full repository downloads reuse Hugging Face cache behavior where possible.
 - Pause/resume works by stopping the current worker and reusing existing local files on resume.
 - Electron builds include the frontend, backend entry, and Python downloader script.
+- **Electron ASAR Compatibility:** The backend automatically resolves physical script paths (`resources/downloader.py`) and discovers external Python runtimes to ensure bulletproof child process execution in packaged production builds.
+- **Clean Queue Recovery:** If the application is closed while downloads are active or queued, they are automatically paused on next startup so they don't appear as frozen/zombie processes.
 
 ## License
 
