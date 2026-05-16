@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.0.2] - 2026-05-16
+
+### 🚀 Added & Improved
+
+* **Dynamic Application Versioning:**
+  * Configured `App.tsx` and `electron/preload.cjs` to dynamically fetch the application version directly from `package.json` and Electron's runtime environment (`window.modelDock.version`).
+  * Eliminates hardcoded version strings in the UI. When packaged as a new executable (e.g., `1.0.2.exe`), the sidebar version indicator (`v1.0.2`) and the auto-update checker automatically inherit the correct release version.
+
+---
+
 ## [1.0.1] - 2026-05-16
 
 ### 🚀 Added & Improved
