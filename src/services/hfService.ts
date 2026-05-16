@@ -7,6 +7,7 @@ declare global {
       name?: string;
       developer?: string;
       creator?: string;
+      version?: string;
       repository?: string;
       backendUrl?: string;
       selectFolder?: (defaultPath?: string) => Promise<string | null>;

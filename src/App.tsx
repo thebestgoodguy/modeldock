@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Download, Loader2, Zap } from 'lucide-react';
 import { HuggingFaceService } from './services/hfService';
 import { AppSettings, DiskSpaceInfo, DownloadItem, HFFile, HFRepoInfo, RepoType, UpdateInfo } from './types';
+import packageJson from '../package.json';
 
 const DEFAULT_SETTINGS: AppSettings = {
   hf_token: '',
@@ -30,6 +31,7 @@ function formatBytes(bytes: number | null | undefined) {
 }
 
 export default function App() {
+  const appVersion = window.modelDock?.version || packageJson.version || '1.0.1';
   const [repo, setRepo] = useState<HFRepoInfo | null>(null);
   const [repoType, setRepoType] = useState<RepoType>('model');
   const [files, setFiles] = useState<HFFile[]>([]);
@@ -67,14 +69,14 @@ export default function App() {
     loadDownloadHistory();
     loadLmStudioPath();
 
-    HuggingFaceService.checkUpdate('1.0.1').then((info) => {
+    HuggingFaceService.checkUpdate(appVersion).then((info) => {
       setUpdateInfo(info);
       if (info.hasUpdate) {
         setIsUpdateModalOpen(true);
         addToast(`New update available: v${info.latestVersion}`, 'info');
       }
     });
-  }, []);
+  }, [appVersion]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -521,7 +523,7 @@ export default function App() {
           failedCount={failedCount}
           historyCount={downloadHistory.length}
           downloadPath={settings.download_path}
-          currentVersion="1.0.1"
+          currentVersion={appVersion}
         />
         <Canvas
           view={view}
