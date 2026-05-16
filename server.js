@@ -294,6 +294,31 @@ function createActiveDownload(row, token = '') {
   };
 }
 
+function getPythonExecutable() {
+  if (process.env.PYTHON && fs.existsSync(process.env.PYTHON)) {
+    return process.env.PYTHON;
+  }
+  const candidates = [
+    'C:/Program Files/Python311/python.exe',
+    'C:/Program Files/Python312/python.exe',
+    'C:/Program Files/Python313/python.exe',
+    'C:/Program Files/Python310/python.exe',
+    path.join(process.env.USERPROFILE || '', 'scoop/apps/python313/current/python.exe'),
+    path.join(process.env.USERPROFILE || '', 'scoop/apps/python312/current/python.exe'),
+    path.join(process.env.USERPROFILE || '', 'scoop/apps/python311/current/python.exe'),
+    path.join(process.env.USERPROFILE || '', 'AppData/Local/Programs/Python/Python311/python.exe'),
+    path.join(process.env.USERPROFILE || '', 'AppData/Local/Programs/Python/Python312/python.exe'),
+    path.join(process.env.USERPROFILE || '', 'AppData/Local/Programs/Python/Python313/python.exe')
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return 'python';
+}
+
 function startActiveDownload(active) {
   removeFromQueue(active.id);
   active.status = 'starting';
@@ -326,8 +351,12 @@ function startActiveDownload(active) {
   if (active.mirror) args.push('--mirror');
   if (speedLimitKbps > 0) args.push('--speed-limit-kbps', String(speedLimitKbps));
 
-  const pythonProcess = spawn(process.env.PYTHON || 'python', args, {
-    cwd: __dirname,
+  const pythonExec = getPythonExecutable();
+  active.logs.push(`INFO: Using Python interpreter at ${pythonExec}`);
+  active.logs.push(`INFO: Downloader script at ${scriptPath}`);
+
+  const pythonProcess = spawn(pythonExec, args, {
+    cwd: path.dirname(scriptPath),
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, TQDM_POSITION: '-1', HF_HUB_DISABLE_PROGRESS_BARS: '0', HF_HUB_ENABLE_HF_TRANSFER: '0' }
