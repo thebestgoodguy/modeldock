@@ -37,6 +37,7 @@ async function createWindow() {
     minHeight: 720,
     backgroundColor: '#09090b',
     title: 'ModelDock',
+    icon: path.join(__dirname, '..', 'public', 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

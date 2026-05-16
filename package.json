@@ -87,7 +87,6 @@
       "target": [
         "nsis"
       ],
-      "signAndEditExecutable": false,
       "verifyUpdateCodeSignature": false,
       "artifactName": "ModelDock-${version}-Setup.${ext}"
     },
