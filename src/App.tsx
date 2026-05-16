@@ -345,6 +345,24 @@ export default function App() {
     }
   };
 
+  const resetAppData = async () => {
+    try {
+      await HuggingFaceService.resetAppData();
+      setDownloadHistory([]);
+      setSavedRepos([]);
+      setSelectedLogId(null);
+      setLogDetails(null);
+      setIsLogModalOpen(false);
+      setSearchResults([]);
+      resetRepoView();
+      setView('home');
+      addToast('App data reset', 'success');
+    } catch (e: any) {
+      addToast(e.message || 'Failed to reset app data', 'error');
+      throw e;
+    }
+  };
+
   const cancelActiveDownload = async (id: string) => {
     try {
       await HuggingFaceService.cancelDownload(id);
@@ -531,6 +549,7 @@ export default function App() {
         settings={settings}
         lmStudioPreferredPath={lmStudioPreferredPath}
         onSave={handleSaveSettings}
+        onResetAppData={resetAppData}
       />
 
       <LogModal

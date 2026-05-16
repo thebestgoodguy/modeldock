@@ -50,6 +50,7 @@ db.exec(`
   INSERT OR IGNORE INTO settings (key, value) VALUES ('max_concurrent_downloads', '1');
   INSERT OR IGNORE INTO settings (key, value) VALUES ('max_workers', '8');
   INSERT OR IGNORE INTO settings (key, value) VALUES ('speed_limit_kbps', '0');
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('physical_reset_after', '');
 `);
 
 for (const columnSql of [
@@ -145,6 +146,21 @@ function getWorkerLimit(options = {}) {
 
 function getSpeedLimit(options = {}) {
   return toNonNegativeInt(options.speedLimitKbps ?? getSetting('speed_limit_kbps', '0'), 0);
+}
+
+function stopActiveDownloads() {
+  for (const active of activeDownloads.values()) {
+    if (active.process) {
+      active.stopReason = 'canceled';
+      if (process.platform === 'win32') {
+        exec(`taskkill /pid ${active.process.pid} /f /t`);
+      } else {
+        active.process.kill('SIGTERM');
+      }
+    }
+  }
+  activeDownloads.clear();
+  downloadQueue.splice(0, downloadQueue.length);
 }
 
 function sanitizeFiles(files) {
@@ -445,20 +461,23 @@ app.get('/api/downloads', (req, res) => {
 });
 
 app.post('/api/downloads/clear', (req, res) => {
-  for (const active of activeDownloads.values()) {
-    if (active.process) {
-      active.stopReason = 'canceled';
-      if (process.platform === 'win32') {
-        exec(`taskkill /pid ${active.process.pid} /f /t`);
-      } else {
-        active.process.kill('SIGTERM');
-      }
-    }
-  }
+  stopActiveDownloads();
   db.prepare('DELETE FROM downloads').run();
-  activeDownloads.clear();
-  downloadQueue.splice(0, downloadQueue.length);
   res.json({ success: true });
+});
+
+app.post('/api/reset-app-data', (req, res) => {
+  const resetAt = new Date().toISOString();
+  stopActiveDownloads();
+
+  const reset = db.transaction(() => {
+    db.prepare('DELETE FROM downloads').run();
+    db.prepare('DELETE FROM repositories').run();
+    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('physical_reset_after', resetAt);
+  });
+
+  reset();
+  res.json({ success: true, resetAt });
 });
 
 app.get('/api/settings', (req, res) => {
@@ -771,15 +790,20 @@ app.get('/api/downloads/physical', (req, res) => {
   }
 
   try {
+    const physicalResetAfter = Date.parse(getSetting('physical_reset_after', ''));
     const folders = fs.readdirSync(downloadPath).filter((folder) =>
       fs.statSync(path.join(downloadPath, folder)).isDirectory()
     );
     const history = db.prepare('SELECT * FROM downloads').all().map(mergeLiveDownload);
 
-    const results = folders.map((folderName) => {
+    const results = folders.flatMap((folderName) => {
       const matchingRecord = history.find((h) => folderNameForRepo(h.repoId, h.repoType) === folderName);
       const inferred = repoFromFolderName(folderName);
       const stats = fs.statSync(path.join(downloadPath, folderName));
+
+      if (!matchingRecord && Number.isFinite(physicalResetAfter) && stats.mtime.getTime() <= physicalResetAfter) {
+        return [];
+      }
 
       return {
         id: matchingRecord ? matchingRecord.id : `physical-${folderName}`,

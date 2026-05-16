@@ -254,6 +254,13 @@ export const HuggingFaceService = {
     return readJsonResponse<any>(response, 'Failed to clear download history');
   },
 
+  async resetAppData() {
+    const response = await fetch(backendApi('/reset-app-data'), {
+      method: 'POST'
+    });
+    return readJsonResponse<{ success: boolean; resetAt: string }>(response, 'Failed to reset app data');
+  },
+
   async deleteDownload(id: string) {
     const response = await fetch(backendApi(`/downloads/${id}`), {
       method: 'DELETE'

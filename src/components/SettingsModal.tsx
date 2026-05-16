@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Cpu, FolderOpen, Gauge, Save, Settings, Shield, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Cpu, FolderOpen, Gauge, RotateCcw, Save, Settings, Shield, X } from 'lucide-react';
 import { AppSettings } from '../types';
 
 interface SettingsModalProps {
@@ -9,6 +9,7 @@ interface SettingsModalProps {
   settings: AppSettings;
   lmStudioPreferredPath: string;
   onSave: (settings: AppSettings) => void;
+  onResetAppData: () => Promise<void> | void;
 }
 
 export const SettingsModal = ({
@@ -16,13 +17,20 @@ export const SettingsModal = ({
   onClose,
   settings,
   lmStudioPreferredPath,
-  onSave
+  onSave,
+  onResetAppData
 }: SettingsModalProps) => {
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [saved, setSaved] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   React.useEffect(() => {
-    if (isOpen) setLocalSettings(settings);
+    if (isOpen) {
+      setLocalSettings(settings);
+      setResetConfirm(false);
+      setResetting(false);
+    }
   }, [isOpen, settings]);
 
   const updateField = (key: keyof AppSettings, value: string) => {
@@ -47,6 +55,23 @@ export const SettingsModal = ({
       setSaved(false);
       onClose();
     }, 1000);
+  };
+
+  const handleResetAppData = async () => {
+    if (!resetConfirm) {
+      setResetConfirm(true);
+      window.setTimeout(() => setResetConfirm(false), 4000);
+      return;
+    }
+
+    setResetting(true);
+    try {
+      await onResetAppData();
+      setResetConfirm(false);
+      onClose();
+    } finally {
+      setResetting(false);
+    }
   };
 
   return (
@@ -184,6 +209,30 @@ export const SettingsModal = ({
                       className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-hf-purple/50 transition-all"
                     />
                   </div>
+                </div>
+
+                <div className="border-t border-zinc-800 pt-6 flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-bold text-red-400 uppercase tracking-widest flex items-center gap-2">
+                      <AlertTriangle className="w-3 h-3" />
+                      Reset App Data
+                    </div>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Clears recent, library records, saved repos, and hides older local folders. Downloaded files stay on disk.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleResetAppData}
+                    disabled={resetting}
+                    className={`shrink-0 px-4 py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      resetConfirm
+                        ? 'bg-red-500 text-white hover:bg-red-400'
+                        : 'bg-red-500/10 text-red-400 hover:bg-red-500/15'
+                    } disabled:opacity-60`}
+                  >
+                    <RotateCcw className={`w-4 h-4 ${resetting ? 'animate-spin' : ''}`} />
+                    {resetting ? 'Resetting' : resetConfirm ? 'Confirm Reset' : 'Reset App'}
+                  </button>
                 </div>
               </div>
 
