@@ -83,6 +83,7 @@
       "node_modules/file-uri-to-path/**/*"
     ],
     "win": {
+      "icon": "public/icon.ico",
       "target": [
         "nsis"
       ],
@@ -91,6 +92,8 @@
       "artifactName": "ModelDock-${version}-Setup.${ext}"
     },
     "nsis": {
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
