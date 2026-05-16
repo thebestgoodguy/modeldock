@@ -1,0 +1,9 @@
+{
+  "name": "ModelDock",
+  "description": "Local Hugging Face model, dataset, and space downloader with queueing, logs, README preview, and Electron packaging.",
+  "developer": "Sadri ERCAN",
+  "creator": "Sadri ERCAN",
+  "repository": "https://github.com/thebestgoodguy/modeldock.git",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

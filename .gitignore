@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build and package output
+dist/
+build/
+release/
+out/
+*.asar
+*.blockmap
+latest.yml
+builder-debug.yml
+*.exe
+*.msi
+
+# Runtime data
+*.log
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+hf_downloader.db
+tmp_download*/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Tooling and editor cache
+.vite/
+.cache/
+coverage/
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
