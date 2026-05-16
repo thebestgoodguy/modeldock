@@ -355,7 +355,9 @@ export const Canvas = ({
 
                     <div className="min-w-0">
                       <div className="flex items-center justify-between text-[10px] mb-1">
-                        <span className="font-black text-zinc-300">{item.progress || 0}%</span>
+                        <span className="font-black text-zinc-300">
+                          {item.progress || 0}% {item.downloadedSize ? `(${item.downloadedSize})` : ''}
+                        </span>
                         <span className="text-zinc-500">{item.speed || '0 KB/s'}</span>
                       </div>
                       <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">

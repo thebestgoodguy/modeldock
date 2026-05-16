@@ -141,7 +141,9 @@ export const SidebarRight = ({
                       />
                     </div>
                     <div className="flex items-center justify-between text-[9px] font-bold uppercase">
-                      <span className="text-cyan-400">{item.progress || 0}%</span>
+                      <span className="text-cyan-400">
+                        {item.progress || 0}% {item.downloadedSize ? `(${item.downloadedSize})` : ''}
+                      </span>
                       <span className="text-zinc-500">{item.speed || '0 KB/s'}</span>
                     </div>
                   </div>

@@ -68,6 +68,12 @@ for (const columnSql of [
   }
 }
 
+try {
+  db.prepare("UPDATE downloads SET status = 'paused' WHERE status IN ('downloading', 'starting', 'queued')").run();
+} catch (e) {
+  console.error('Failed to reset active downloads at startup:', e);
+}
+
 const app = express();
 const requestedPort = Number.parseInt(process.env.MODELDOCK_BACKEND_PORT || process.env.PORT || '4000', 10);
 const port = Number.isFinite(requestedPort) ? requestedPort : 4000;
@@ -187,6 +193,7 @@ function mergeLiveDownload(row) {
     progress: active.progress || 0,
     speed: active.speed || '0 KB/s',
     eta: active.eta || '--:--',
+    downloadedSize: active.downloadedSize || '',
     logs: active.logs
   };
 }
@@ -225,6 +232,7 @@ function appendDownloadLog(downloadId, rawLog) {
     const progressMatch = line.match(/(\d{1,3})%/);
     const speedMatch = line.match(/(\d+\.?\d*\s*[KMG]B\/s)/i);
     const etaMatch = line.match(/<(\d+:\d+)/);
+    const sizeMatch = line.match(/\|\s*([0-9.]+[KMG]?B?\/[0-9.]+[KMG]?B?)/i);
 
     if (progressMatch) {
       active.progress = Math.min(100, Number.parseInt(progressMatch[1], 10));
@@ -232,6 +240,7 @@ function appendDownloadLog(downloadId, rawLog) {
     }
     if (speedMatch) active.speed = speedMatch[1];
     if (etaMatch) active.eta = etaMatch[1];
+    if (sizeMatch) active.downloadedSize = sizeMatch[1];
 
     if (active.logs.length > 1000) {
       active.logs.splice(0, active.logs.length - 1000);
@@ -279,6 +288,7 @@ function createActiveDownload(row, token = '') {
     progress: Number(row.progress || 0),
     speed: '0 KB/s',
     eta: '--:--',
+    downloadedSize: '',
     process: null,
     stopReason: null
   };
@@ -319,7 +329,8 @@ function startActiveDownload(active) {
   const pythonProcess = spawn(process.env.PYTHON || 'python', args, {
     cwd: __dirname,
     windowsHide: true,
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, TQDM_POSITION: '-1', HF_HUB_DISABLE_PROGRESS_BARS: '0', HF_HUB_ENABLE_HF_TRANSFER: '0' }
   });
 
   active.process = pythonProcess;
@@ -644,6 +655,7 @@ app.get('/api/downloads/:id/status', (req, res) => {
       progress: active.progress || 0,
       speed: active.speed || '0 KB/s',
       eta: active.eta || '--:--',
+      downloadedSize: active.downloadedSize || '',
       logs: active.logs,
       options: active.options
     });
@@ -658,8 +670,9 @@ app.get('/api/downloads/:id/status', (req, res) => {
     repoType: merged.repoType,
     status: merged.status,
     progress: merged.progress || 0,
-    speed: '0 KB/s',
-    eta: '--:--',
+    speed: merged.speed || '0 KB/s',
+    eta: merged.eta || '--:--',
+    downloadedSize: merged.downloadedSize || '',
     logs: merged.logs || [],
     options: merged.options || {}
   });
@@ -815,6 +828,7 @@ app.get('/api/downloads/physical', (req, res) => {
         progress: matchingRecord ? matchingRecord.progress : 0,
         speed: matchingRecord ? matchingRecord.speed : '0 KB/s',
         eta: matchingRecord ? matchingRecord.eta : '--:--',
+        downloadedSize: matchingRecord ? matchingRecord.downloadedSize : '',
         timestamp: matchingRecord ? matchingRecord.timestamp : stats.mtime.toISOString(),
         isPhysicalOnly: !matchingRecord
       };

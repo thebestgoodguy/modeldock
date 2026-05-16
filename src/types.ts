@@ -29,6 +29,7 @@ export interface DownloadItem {
   progress: number;
   speed: string;
   eta?: string;
+  downloadedSize?: string;
   status: DownloadStatus;
   savePath?: string;
   timestamp: string;

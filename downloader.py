@@ -4,8 +4,11 @@ import argparse
 import os
 import sys
 import traceback
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "0"
+os.environ["TQDM_POSITION"] = "-1"
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from huggingface_hub import hf_hub_download, snapshot_download
 
 
