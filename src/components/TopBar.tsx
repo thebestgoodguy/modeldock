@@ -70,8 +70,8 @@ export const TopBar = ({
   return (
     <div className="h-16 glass border-b border-zinc-800/50 flex items-center justify-between px-6 z-50">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-to-tr from-hf-purple to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-hf-purple/20">
-          <Download className="text-white w-6 h-6" />
+        <div className="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center overflow-hidden shadow-lg border border-zinc-800">
+          <img src="/icon.ico" alt="ModelDock Logo" className="w-7 h-7 object-contain" />
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-lg leading-none hf-gradient-text">ModelDock</span>
