@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.0.1] - 2026-05-16
+
+### 🚀 Added & Improved
+
+* **Automated GitHub Releases Update System:**
+  * Implemented an auto-update checker that queries the public GitHub Releases API (`api.github.com/repos/thebestgoodguy/modeldock/releases/latest`) in the background on application startup.
+  * Added a dynamic version indicator (`v1.0.1`) at the bottom of the left navigation sidebar.
+  * Integrated a glowing **Update** button next to the top navigation GitHub icon that appears when a newer version (e.g., `1.0.2`) is published.
+  * Created a premium, glassmorphism **Update Modal** (`UpdateModal.tsx`) that beautifully displays the latest version number, the complete Markdown release notes/changelog, and direct action buttons for downloading the installer or opening the GitHub release page.
+
+---
+
 ## [1.0.0] - 2026-05-16
 
 ### 🚀 Added & Improved

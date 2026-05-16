@@ -1,5 +1,5 @@
 // Developer / Creator: Sadri ERCAN
-import { AppSettings, DiskSpaceInfo, HFFile, HFRepoInfo, RepoType } from '../types';
+import { AppSettings, DiskSpaceInfo, HFFile, HFRepoInfo, RepoType, UpdateInfo } from '../types';
 
 declare global {
   interface Window {
@@ -319,5 +319,35 @@ export const HuggingFaceService = {
       body: JSON.stringify({ folderName })
     });
     return readJsonResponse<any>(response, 'Failed to delete downloaded folder');
+  },
+
+  async checkUpdate(currentVersion: string): Promise<UpdateInfo> {
+    try {
+      const response = await fetch('https://api.github.com/repos/thebestgoodguy/modeldock/releases/latest');
+      if (!response.ok) {
+        return { hasUpdate: false, latestVersion: currentVersion, currentVersion, changelog: '', downloadUrl: '', releaseUrl: '' };
+      }
+      const data = await response.json();
+      const latestVersion = (data.tag_name || '').replace(/^v/, '');
+      const currentClean = currentVersion.replace(/^v/, '');
+
+      const hasUpdate = latestVersion && latestVersion !== currentClean && latestVersion.localeCompare(currentClean, undefined, { numeric: true }) > 0;
+      let downloadUrl = data.html_url || '';
+      if (Array.isArray(data.assets) && data.assets.length > 0) {
+        const asset = data.assets.find((a: any) => a.name.endsWith('.exe')) || data.assets[0];
+        downloadUrl = asset.browser_download_url || downloadUrl;
+      }
+
+      return {
+        hasUpdate: Boolean(hasUpdate),
+        latestVersion: latestVersion || currentClean,
+        currentVersion: currentClean,
+        changelog: data.body || 'No changelog provided.',
+        downloadUrl,
+        releaseUrl: data.html_url || 'https://github.com/thebestgoodguy/modeldock/releases'
+      };
+    } catch (e) {
+      return { hasUpdate: false, latestVersion: currentVersion, currentVersion, changelog: '', downloadUrl: '', releaseUrl: '' };
+    }
   }
 };

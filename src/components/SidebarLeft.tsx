@@ -29,6 +29,7 @@ interface SidebarLeftProps {
   failedCount: number;
   historyCount: number;
   downloadPath: string;
+  currentVersion?: string;
 }
 
 export const SidebarLeft = ({
@@ -42,7 +43,8 @@ export const SidebarLeft = ({
   completedCount,
   failedCount,
   historyCount,
-  downloadPath
+  downloadPath,
+  currentVersion
 }: SidebarLeftProps) => {
   const menuItems = [
     { id: 'home', icon: Home, label: 'Dashboard', count: null },
@@ -199,6 +201,11 @@ export const SidebarLeft = ({
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="pt-3 border-t border-zinc-800/50 flex items-center justify-between px-2 text-[10px] text-zinc-500 font-bold tracking-wider uppercase">
+        <span>ModelDock App</span>
+        <span className="bg-zinc-900 px-2 py-1 rounded-lg border border-zinc-800 text-zinc-400 font-mono">v{currentVersion || '1.0.1'}</span>
       </div>
     </div>
   );

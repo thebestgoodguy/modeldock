@@ -13,10 +13,11 @@ import {
   LayoutGrid,
   Search,
   Settings,
+  Sparkles,
   Terminal,
   X
 } from 'lucide-react';
-import { RepoType } from '../types';
+import { RepoType, UpdateInfo } from '../types';
 
 const repoTypeItems: { id: RepoType; label: string; icon: typeof Box }[] = [
   { id: 'model', label: 'Model', icon: Box },
@@ -35,7 +36,9 @@ export const TopBar = ({
   activeCount,
   historyCount,
   repoType,
-  onRepoTypeChange
+  onRepoTypeChange,
+  updateInfo,
+  onOpenUpdate
 }: {
   onSearch: (val: string) => void;
   onClearSearch: () => void;
@@ -48,6 +51,8 @@ export const TopBar = ({
   historyCount: number;
   repoType: RepoType;
   onRepoTypeChange: (repoType: RepoType) => void;
+  updateInfo?: UpdateInfo | null;
+  onOpenUpdate?: () => void;
 }) => {
   const [query, setQuery] = useState('');
   const [quickMenuOpen, setQuickMenuOpen] = useState(false);
@@ -129,6 +134,16 @@ export const TopBar = ({
       </div>
 
       <div className="flex items-center gap-4 relative">
+        {updateInfo?.hasUpdate && (
+          <button
+            onClick={onOpenUpdate}
+            className="h-9 px-3 rounded-xl bg-hf-purple hover:bg-hf-purple/90 text-white text-xs font-bold transition-all shadow-lg shadow-hf-purple/20 flex items-center gap-1.5 animate-pulse"
+            title="New update available!"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Update (v{updateInfo.latestVersion})</span>
+          </button>
+        )}
         <button
           onClick={() => window.open('https://github.com/thebestgoodguy/modeldock.git', '_blank', 'noopener,noreferrer')}
           className="p-2.5 rounded-xl glass-hover text-zinc-400 hover:text-white transition-colors"

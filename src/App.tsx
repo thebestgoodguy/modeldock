@@ -6,11 +6,12 @@ import { SidebarRight } from './components/SidebarRight';
 import { Canvas } from './components/Canvas';
 import { SettingsModal } from './components/SettingsModal';
 import { LogModal } from './components/LogModal';
+import { UpdateModal } from './components/UpdateModal';
 import { ToastContainer, Toast, ToastType } from './components/ToastContainer';
 import { motion, AnimatePresence } from 'motion/react';
 import { Download, Loader2, Zap } from 'lucide-react';
 import { HuggingFaceService } from './services/hfService';
-import { AppSettings, DiskSpaceInfo, DownloadItem, HFFile, HFRepoInfo, RepoType } from './types';
+import { AppSettings, DiskSpaceInfo, DownloadItem, HFFile, HFRepoInfo, RepoType, UpdateInfo } from './types';
 
 const DEFAULT_SETTINGS: AppSettings = {
   hf_token: '',
@@ -47,6 +48,8 @@ export default function App() {
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [logDetails, setLogDetails] = useState<any | null>(null);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   const addToast = (message: string, type: ToastType = 'info') => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -63,6 +66,14 @@ export default function App() {
     loadSettings();
     loadDownloadHistory();
     loadLmStudioPath();
+
+    HuggingFaceService.checkUpdate('1.0.1').then((info) => {
+      setUpdateInfo(info);
+      if (info.hasUpdate) {
+        setIsUpdateModalOpen(true);
+        addToast(`New update available: v${info.latestVersion}`, 'info');
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -493,6 +504,8 @@ export default function App() {
         historyCount={downloadHistory.length}
         repoType={repoType}
         onRepoTypeChange={handleRepoTypeChange}
+        updateInfo={updateInfo}
+        onOpenUpdate={() => setIsUpdateModalOpen(true)}
       />
       <div className="flex-1 flex overflow-hidden">
         <SidebarLeft
@@ -507,6 +520,7 @@ export default function App() {
           failedCount={failedCount}
           historyCount={downloadHistory.length}
           downloadPath={settings.download_path}
+          currentVersion="1.0.1"
         />
         <Canvas
           view={view}
@@ -557,6 +571,12 @@ export default function App() {
         logDetails={logDetails}
         onClear={clearLogs}
         onClose={() => setIsLogModalOpen(false)}
+      />
+
+      <UpdateModal
+        isOpen={isUpdateModalOpen}
+        updateInfo={updateInfo}
+        onClose={() => setIsUpdateModalOpen(false)}
       />
 
       <AnimatePresence>
