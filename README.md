@@ -24,6 +24,11 @@ ModelDock is a local Hugging Face downloader for models, datasets, and Spaces. I
 - **Clean Startup & Session Recovery:** Automatic pause of interrupted or orphaned downloads on backend startup to ensure a pristine live queue
 - **Intelligent Python Runtime Discovery:** Automatic physical scanning (`fs.existsSync`) of system paths, Scoop installations, and AppData directories for bulletproof ASAR/Electron packaging
 - **Enhanced Log Observability:** Absolute file paths for both Python interpreter and downloader scripts recorded in the live terminal stream
+- **Automated GitHub Releases Update System:** Background polling of GitHub Releases API (`latest`), dynamic sidebar version indicator, and a beautiful premium Update Modal with full markdown changelog rendering and direct download links
+- **Dynamic Application Versioning:** Automatic extraction of runtime version from `package.json` and Electron preload (`window.modelDock.version`), eliminating hardcoded version strings across all build targets
+- **Native Directory Browsing (`selectFolder`):** Dedicated **Browse** button next to Download Directory and LM Studio Models inputs, featuring a dual-mode picker (native Electron dialog in packaged builds, PowerShell `FolderBrowserDialog` fallback in standalone browser mode)
+- **LM Studio Use/Reset Toggle:** Intuitive toggle button that binds the download path to LM Studio and transforms into a red `Reset` button to instantly restore default paths without losing previously downloaded models
+- **Complete App Data Reset:** Fully re-initializes SQLite settings table and dynamically reloads frontend preferences without requiring an application restart
 - Global logs modal with clear logs support
 - README / model card preview with Markdown and HTML rendering
 - Disk space check before queueing downloads
