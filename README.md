@@ -1,11 +1,5 @@
 # ModelDock
 
-**Developer / Creator:** Sadri ERCAN
-**Repository:** https://github.com/thebestgoodguy/modeldock.git
-
-<img width="400" height="400" alt="logo" src="https://github.com/user-attachments/assets/9c3f907c-4ee0-4a6b-9324-9b9abf20746e" />
-
-
 ModelDock is a local Hugging Face downloader for models, datasets, and Spaces. It gives you a clean desktop-style interface for searching repositories, inspecting files, reading model cards, queueing downloads, and managing local model folders.
 
 <img width="2548" height="1331" alt="Screenshot_5" src="https://github.com/user-attachments/assets/6aaf2e87-2b3e-4a77-86fc-4610aa8eb92d" />
