@@ -1,10 +1,21 @@
 // Developer / Creator: Sadri ERCAN
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, dialog } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 let mainWindow = null;
 let backendStartPromise = null;
+
+ipcMain.handle('select-folder', async (event, defaultPath) => {
+  const result = await dialog.showOpenDialog({
+    defaultPath: defaultPath || 'C:\\',
+    properties: ['openDirectory']
+  });
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0];
+  }
+  return null;
+});
 
 async function startBackend() {
   if (backendStartPromise) return backendStartPromise;

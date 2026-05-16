@@ -513,11 +513,40 @@ app.post('/api/reset-app-data', (req, res) => {
   const reset = db.transaction(() => {
     db.prepare('DELETE FROM downloads').run();
     db.prepare('DELETE FROM repositories').run();
-    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('physical_reset_after', resetAt);
+    db.prepare('DELETE FROM settings').run();
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('hf_token', '');
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('download_path', 'C:/Downloads/HF_Models');
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('lm_studio_path', '');
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('max_concurrent_downloads', '1');
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('max_workers', '8');
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('speed_limit_kbps', '0');
+    db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('physical_reset_after', resetAt);
   });
 
   reset();
   res.json({ success: true, resetAt });
+});
+
+app.post('/api/select-folder-fallback', (req, res) => {
+  try {
+    const script = `
+      Add-Type -AssemblyName System.Windows.Forms;
+      $dlg = New-Object System.Windows.Forms.FolderBrowserDialog;
+      $dlg.Description = "Select Download Directory";
+      $dlg.ShowNewFolderButton = $true;
+      if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        Write-Output $dlg.SelectedPath;
+      }
+    `;
+    const result = execFileSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' });
+    const selected = result.trim();
+    if (selected) {
+      return res.json({ path: selected });
+    }
+    res.json({ path: null });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/settings', (req, res) => {

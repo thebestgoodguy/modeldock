@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   * Integrated a glowing **Update** button next to the top navigation GitHub icon that appears when a newer version (e.g., `1.0.2`) is published.
   * Created a premium, glassmorphism **Update Modal** (`UpdateModal.tsx`) that beautifully displays the latest version number, the complete Markdown release notes/changelog, and direct action buttons for downloading the installer or opening the GitHub release page.
 
+* **Settings & Directory Management Enhancements:**
+  * **Native Directory Browsing (`selectFolder`):** Added a dedicated **Browse** button next to both the Download Directory and LM Studio Models input fields. Integrated a robust dual-mode folder picker: uses native Electron `dialog.showOpenDialog` when packaged, and falls back to a clean PowerShell `FolderBrowserDialog` via `/api/select-folder-fallback` when running in a standalone web browser.
+  * **LM Studio Use/Reset Toggle:** Converted the LM Studio `Use` action into an intuitive toggle button. When clicked, it binds the download path to LM Studio and transforms into a red `Reset` button. Clicking `Reset` instantly restores the default download path (`C:/Downloads/HF_Models`), immediately bringing back the default model list into the UI view and reassuring users that their previously downloaded models remain fully intact on disk.
+  * **Complete App Data Reset:** Fixed an issue where clicking "Reset App Data" did not restore default directory preferences. The backend `/api/reset-app-data` endpoint now completely clears and re-initializes the SQLite `settings` table, while the frontend dynamically reloads settings to immediately reflect defaults without requiring an app restart.
+
 ---
 
 ## [1.0.0] - 2026-05-16

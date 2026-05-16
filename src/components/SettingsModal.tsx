@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, CheckCircle2, Cpu, FolderOpen, Gauge, RotateCcw, Save, Settings, Shield, X } from 'lucide-react';
 import { AppSettings } from '../types';
+import { HuggingFaceService } from '../services/hfService';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -37,14 +38,29 @@ export const SettingsModal = ({
     setLocalSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const useLmStudioPath = () => {
-    const lmPath = localSettings.lm_studio_path || lmStudioPreferredPath;
-    if (lmPath) {
+  const lmPath = localSettings.lm_studio_path || lmStudioPreferredPath;
+  const isLmStudioUsed = Boolean(lmPath && localSettings.download_path && localSettings.download_path.toLowerCase() === lmPath.toLowerCase());
+
+  const toggleLmStudioPath = () => {
+    if (isLmStudioUsed) {
+      setLocalSettings((prev) => ({
+        ...prev,
+        download_path: 'C:/Downloads/HF_Models'
+      }));
+    } else if (lmPath) {
       setLocalSettings((prev) => ({
         ...prev,
         lm_studio_path: lmPath,
         download_path: lmPath
       }));
+    }
+  };
+
+  const handleSelectDirectory = async (field: 'download_path' | 'lm_studio_path') => {
+    const currentPath = localSettings[field] || (field === 'lm_studio_path' ? lmStudioPreferredPath : '');
+    const selected = await HuggingFaceService.selectFolder(currentPath);
+    if (selected) {
+      updateField(field, selected);
     }
   };
 
@@ -133,13 +149,23 @@ export const SettingsModal = ({
                       <FolderOpen className="w-3 h-3" />
                       Download Directory
                     </label>
-                    <input
-                      type="text"
-                      value={localSettings.download_path}
-                      onChange={(e) => updateField('download_path', e.target.value)}
-                      placeholder="C:/Models"
-                      className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-hf-purple/50 transition-all placeholder:text-zinc-700 font-mono"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={localSettings.download_path}
+                        onChange={(e) => updateField('download_path', e.target.value)}
+                        placeholder="C:/Models"
+                        className="w-full flex-1 min-w-0 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-hf-purple/50 transition-all placeholder:text-zinc-700 font-mono"
+                      />
+                      <button
+                        onClick={() => handleSelectDirectory('download_path')}
+                        className="px-4 rounded-2xl bg-zinc-800 hover:bg-hf-purple text-zinc-200 text-xs font-bold transition-all flex items-center gap-1.5"
+                        title="Select Folder"
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                        Browse
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -156,10 +182,21 @@ export const SettingsModal = ({
                         className="min-w-0 flex-1 bg-zinc-900/50 border border-zinc-800 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-hf-purple/50 transition-all placeholder:text-zinc-700 font-mono"
                       />
                       <button
-                        onClick={useLmStudioPath}
-                        className="px-3 rounded-2xl bg-zinc-800 hover:bg-hf-purple text-zinc-200 text-xs font-bold transition-all"
+                        onClick={() => handleSelectDirectory('lm_studio_path')}
+                        className="px-3 rounded-2xl bg-zinc-800 hover:bg-hf-purple text-zinc-200 text-xs font-bold transition-all flex items-center gap-1.5"
+                        title="Select LM Studio Folder"
                       >
-                        Use
+                        <FolderOpen className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={toggleLmStudioPath}
+                        className={`px-4 rounded-2xl text-xs font-bold transition-all ${
+                          isLmStudioUsed
+                            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30'
+                            : 'bg-zinc-800 hover:bg-hf-purple text-zinc-200'
+                        }`}
+                      >
+                        {isLmStudioUsed ? 'Reset' : 'Use'}
                       </button>
                     </div>
                   </div>

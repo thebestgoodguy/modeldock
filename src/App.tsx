@@ -359,6 +359,7 @@ export default function App() {
   const resetAppData = async () => {
     try {
       await HuggingFaceService.resetAppData();
+      loadSettings();
       setDownloadHistory([]);
       setSavedRepos([]);
       setSelectedLogId(null);

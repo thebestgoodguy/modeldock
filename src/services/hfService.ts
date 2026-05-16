@@ -9,6 +9,7 @@ declare global {
       creator?: string;
       repository?: string;
       backendUrl?: string;
+      selectFolder?: (defaultPath?: string) => Promise<string | null>;
     };
   }
 }
@@ -78,6 +79,24 @@ function normalizeRepoInfo(data: any, repoType: RepoType): HFRepoInfo {
 }
 
 export const HuggingFaceService = {
+  async selectFolder(defaultPath?: string): Promise<string | null> {
+    if (window.modelDock?.selectFolder) {
+      return await window.modelDock.selectFolder(defaultPath);
+    }
+    try {
+      const response = await fetch(backendApi('/select-folder-fallback'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defaultPath })
+      });
+      const data = await response.json();
+      return data.path || null;
+    } catch (e) {
+      console.error('Select folder fallback failed:', e);
+      return null;
+    }
+  },
+
   async getRepoInfo(repoId: string, token?: string, repoType: RepoType = 'model'): Promise<HFRepoInfo> {
     const response = await fetch(repoApiUrl(repoType, repoId), { headers: authHeaders(token) });
 
