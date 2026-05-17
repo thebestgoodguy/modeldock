@@ -1,7 +1,7 @@
 {
   "name": "modeldock",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A local Hugging Face model, dataset, and space downloader with queueing, logs, and Electron packaging.",
   "author": "Sadri ERCAN",
   "developerCreator": "Sadri ERCAN",

@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.0.4] - 2026-05-17
+
+### Fixed
+
+* **Downloaded model history preservation after updates:**
+  * Added automatic legacy database import on backend startup so older `hf_downloader.db` records can be copied into the current application data database.
+  * Preserves previous download history, saved repositories, and compatible settings when the packaged app starts using a new database location after an update.
+
+* **Physical model folder recovery:**
+  * Existing local model, dataset, and Space folders are now indexed as persistent `completed` download records instead of being shown as temporary `unknown` entries.
+  * Previously indexed physical records stuck in `unknown` are repaired to `completed` when the corresponding folder still exists on disk.
+
+### Changed
+
+* Bumped the application version to `1.0.4`.
+
+---
+
 ## [1.0.2] - 2026-05-16
 
 ### 🚀 Added & Improved

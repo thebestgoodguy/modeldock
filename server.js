@@ -12,6 +12,15 @@ const __dirname = path.dirname(__filename);
 
 const dbPath = process.env.MODELDOCK_DB_PATH || path.join(__dirname, 'hf_downloader.db');
 const db = new Database(dbPath);
+const DEFAULT_SETTINGS = {
+  hf_token: '',
+  download_path: 'C:/Downloads/HF_Models',
+  lm_studio_path: '',
+  max_concurrent_downloads: '1',
+  max_workers: '8',
+  speed_limit_kbps: '0',
+  physical_reset_after: ''
+};
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS repositories (
@@ -67,6 +76,196 @@ for (const columnSql of [
     // Column already exists.
   }
 }
+
+function samePath(a, b) {
+  try {
+    return fs.realpathSync.native(a).toLowerCase() === fs.realpathSync.native(b).toLowerCase();
+  } catch {
+    return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+  }
+}
+
+function uniqueExistingDbPaths(paths) {
+  const seen = new Set();
+  return paths
+    .filter(Boolean)
+    .map((candidate) => path.resolve(candidate))
+    .filter((candidate) => {
+      if (samePath(candidate, dbPath)) return false;
+      if (!fs.existsSync(candidate)) return false;
+      const stats = fs.statSync(candidate);
+      if (!stats.isFile() || stats.size === 0) return false;
+      const key = (() => {
+        try {
+          return fs.realpathSync.native(candidate).toLowerCase();
+        } catch {
+          return candidate.toLowerCase();
+        }
+      })();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function legacyDbCandidates() {
+  const home = process.env.USERPROFILE || process.env.HOME || '';
+  const appData = process.env.APPDATA || (home ? path.join(home, 'AppData', 'Roaming') : '');
+  const localAppData = process.env.LOCALAPPDATA || (home ? path.join(home, 'AppData', 'Local') : '');
+  const executableDir = process.execPath ? path.dirname(process.execPath) : '';
+  const resourcesDir = process.resourcesPath || '';
+
+  return uniqueExistingDbPaths([
+    path.join(__dirname, 'hf_downloader.db'),
+    path.join(process.cwd(), 'hf_downloader.db'),
+    executableDir && path.join(executableDir, 'hf_downloader.db'),
+    executableDir && path.join(executableDir, 'resources', 'hf_downloader.db'),
+    executableDir && path.join(executableDir, 'resources', 'app', 'hf_downloader.db'),
+    resourcesDir && path.join(resourcesDir, 'hf_downloader.db'),
+    resourcesDir && path.join(resourcesDir, 'app', 'hf_downloader.db'),
+    appData && path.join(appData, 'ModelDock', 'hf_downloader.db'),
+    appData && path.join(appData, 'modeldock', 'hf_downloader.db'),
+    appData && path.join(appData, 'hfdownloader', 'hf_downloader.db'),
+    localAppData && path.join(localAppData, 'ModelDock', 'hf_downloader.db'),
+    localAppData && path.join(localAppData, 'modeldock', 'hf_downloader.db'),
+    localAppData && path.join(localAppData, 'hfdownloader', 'hf_downloader.db')
+  ]);
+}
+
+function tableExists(sourceDb, tableName) {
+  return Boolean(
+    sourceDb
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(tableName)
+  );
+}
+
+function sourceValue(row, columns, key, fallback = '') {
+  return columns.has(key) && row[key] !== undefined && row[key] !== null ? row[key] : fallback;
+}
+
+function importLegacySettings(sourceDb) {
+  if (!tableExists(sourceDb, 'settings')) return 0;
+
+  let imported = 0;
+  const rows = sourceDb.prepare('SELECT * FROM settings').all();
+  const upsert = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+  const current = db.prepare('SELECT value FROM settings WHERE key = ?');
+
+  for (const row of rows) {
+    const key = String(row.key || '');
+    if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) continue;
+
+    const incoming = String(row.value ?? '');
+    const currentRow = current.get(key);
+    const currentValue = currentRow?.value;
+    const defaultValue = DEFAULT_SETTINGS[key];
+    const canReplace = !currentRow || currentValue === '' || currentValue === defaultValue;
+
+    if (canReplace && incoming !== currentValue) {
+      upsert.run(key, incoming);
+      imported += 1;
+    }
+  }
+
+  return imported;
+}
+
+function importLegacyRepositories(sourceDb) {
+  if (!tableExists(sourceDb, 'repositories')) return 0;
+
+  let imported = 0;
+  const columns = new Set(sourceDb.prepare('PRAGMA table_info(repositories)').all().map((column) => column.name));
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO repositories (id, author, likes, downloads, lastModified, pipeline_tag, savedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const row of sourceDb.prepare('SELECT * FROM repositories').all()) {
+    const id = String(sourceValue(row, columns, 'id', '')).trim();
+    if (!id) continue;
+    const result = insert.run(
+      id,
+      sourceValue(row, columns, 'author', String(id).split('/')[0] || ''),
+      Number(sourceValue(row, columns, 'likes', 0) || 0),
+      Number(sourceValue(row, columns, 'downloads', 0) || 0),
+      sourceValue(row, columns, 'lastModified', ''),
+      sourceValue(row, columns, 'pipeline_tag', ''),
+      sourceValue(row, columns, 'savedAt', new Date().toISOString())
+    );
+    imported += result.changes;
+  }
+
+  return imported;
+}
+
+function importLegacyDownloads(sourceDb) {
+  if (!tableExists(sourceDb, 'downloads')) return 0;
+
+  let imported = 0;
+  const columns = new Set(sourceDb.prepare('PRAGMA table_info(downloads)').all().map((column) => column.name));
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO downloads (id, repoId, repoType, files, savePath, status, logs, progress, mirror, estimatedBytes, options, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const row of sourceDb.prepare('SELECT * FROM downloads').all()) {
+    const id = String(sourceValue(row, columns, 'id', Date.now().toString())).trim();
+    const repoId = String(sourceValue(row, columns, 'repoId', '')).trim();
+    if (!id || !repoId) continue;
+
+    const status = String(sourceValue(row, columns, 'status', 'completed') || 'completed');
+    const progress = Number(sourceValue(row, columns, 'progress', status === 'completed' ? 100 : 0) || 0);
+    const result = insert.run(
+      id,
+      repoId,
+      normalizeRepoType(sourceValue(row, columns, 'repoType', 'model')),
+      sourceValue(row, columns, 'files', JSON.stringify([])),
+      sourceValue(row, columns, 'savePath', getSetting('download_path', DEFAULT_SETTINGS.download_path)),
+      status,
+      sourceValue(row, columns, 'logs', JSON.stringify([])),
+      Number.isFinite(progress) ? progress : 0,
+      Number(sourceValue(row, columns, 'mirror', 0) || 0),
+      Number(sourceValue(row, columns, 'estimatedBytes', 0) || 0),
+      sourceValue(row, columns, 'options', JSON.stringify({})),
+      sourceValue(row, columns, 'timestamp', new Date().toISOString())
+    );
+    imported += result.changes;
+  }
+
+  return imported;
+}
+
+function migrateLegacyData() {
+  const candidates = legacyDbCandidates();
+  if (candidates.length === 0) return;
+
+  let totalDownloads = 0;
+  let totalRepositories = 0;
+  let totalSettings = 0;
+
+  for (const candidate of candidates) {
+    let sourceDb = null;
+    try {
+      sourceDb = new Database(candidate, { readonly: true, fileMustExist: true });
+      totalSettings += importLegacySettings(sourceDb);
+      totalRepositories += importLegacyRepositories(sourceDb);
+      totalDownloads += importLegacyDownloads(sourceDb);
+    } catch (e) {
+      console.warn(`Skipping legacy database import from ${candidate}: ${e.message}`);
+    } finally {
+      if (sourceDb) sourceDb.close();
+    }
+  }
+
+  if (totalDownloads > 0 || totalRepositories > 0 || totalSettings > 0) {
+    console.log(
+      `Imported legacy data: ${totalDownloads} downloads, ${totalRepositories} repositories, ${totalSettings} settings.`
+    );
+  }
+}
+
+migrateLegacyData();
 
 try {
   db.prepare("UPDATE downloads SET status = 'paused' WHERE status IN ('downloading', 'starting', 'queued')").run();
@@ -195,6 +394,48 @@ function mergeLiveDownload(row) {
     eta: active.eta || '--:--',
     downloadedSize: active.downloadedSize || '',
     logs: active.logs
+  };
+}
+
+function indexPhysicalDownloadFolder(downloadPath, folderName, stats) {
+  const inferred = repoFromFolderName(folderName);
+  const fullPath = path.join(downloadPath, folderName);
+  const id = `physical-${folderName}`;
+  const logs = [
+    'INFO: Existing local model folder indexed by ModelDock.',
+    `INFO: Folder: ${fullPath}`
+  ];
+
+  db.prepare(`
+    INSERT OR IGNORE INTO downloads (id, repoId, repoType, files, savePath, status, logs, progress, mirror, estimatedBytes, options, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    inferred.repoId,
+    inferred.repoType,
+    JSON.stringify([]),
+    downloadPath,
+    'completed',
+    JSON.stringify(logs),
+    100,
+    0,
+    0,
+    JSON.stringify({}),
+    stats.mtime.toISOString()
+  );
+
+  const row = db.prepare('SELECT * FROM downloads WHERE id = ?').get(id);
+  return row ? mergeLiveDownload(row) : null;
+}
+
+function repairPhysicalDownloadRecord(record) {
+  if (!record || record.status !== 'unknown') return record;
+
+  db.prepare('UPDATE downloads SET status = ?, progress = ? WHERE id = ?').run('completed', 100, record.id);
+  return {
+    ...record,
+    status: 'completed',
+    progress: 100
   };
 }
 
@@ -868,7 +1109,7 @@ app.get('/api/downloads/physical', (req, res) => {
     const history = db.prepare('SELECT * FROM downloads').all().map(mergeLiveDownload);
 
     const results = folders.flatMap((folderName) => {
-      const matchingRecord = history.find((h) => folderNameForRepo(h.repoId, h.repoType) === folderName);
+      let matchingRecord = history.find((h) => folderNameForRepo(h.repoId, h.repoType) === folderName);
       const inferred = repoFromFolderName(folderName);
       const stats = fs.statSync(path.join(downloadPath, folderName));
 
@@ -876,19 +1117,24 @@ app.get('/api/downloads/physical', (req, res) => {
         return [];
       }
 
+      if (!matchingRecord) {
+        matchingRecord = indexPhysicalDownloadFolder(downloadPath, folderName, stats);
+      }
+      matchingRecord = repairPhysicalDownloadRecord(matchingRecord);
+
       return {
         id: matchingRecord ? matchingRecord.id : `physical-${folderName}`,
         repoId: matchingRecord ? matchingRecord.repoId : inferred.repoId,
         repoType: matchingRecord ? matchingRecord.repoType : inferred.repoType,
         folderName,
         fullPath: path.join(downloadPath, folderName),
-        status: matchingRecord ? matchingRecord.status : 'unknown',
-        progress: matchingRecord ? matchingRecord.progress : 0,
+        status: matchingRecord ? matchingRecord.status : 'completed',
+        progress: matchingRecord ? matchingRecord.progress : 100,
         speed: matchingRecord ? matchingRecord.speed : '0 KB/s',
         eta: matchingRecord ? matchingRecord.eta : '--:--',
         downloadedSize: matchingRecord ? matchingRecord.downloadedSize : '',
         timestamp: matchingRecord ? matchingRecord.timestamp : stats.mtime.toISOString(),
-        isPhysicalOnly: !matchingRecord
+        isPhysicalOnly: false
       };
     });
 
