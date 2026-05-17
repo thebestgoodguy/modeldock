@@ -2,6 +2,16 @@
 
 ModelDock is a local Hugging Face downloader for models, datasets, and Spaces. It gives you a clean desktop-style interface for searching repositories, inspecting files, reading model cards, queueing downloads, and managing local model folders.
 
+## Disclaimer
+
+ModelDock is an independent community project and is not affiliated with, endorsed by, sponsored by, or officially supported by Hugging Face, Inc. or the official Hugging Face platform. The name "Hugging Face" is used only to describe compatibility with publicly available Hugging Face repository APIs and model, dataset, and Space repositories.
+
+This project is intended to help users organize their own local model repository, inspect repository files, and make download workflows easier from a desktop-style interface. ModelDock does not host, own, verify, or redistribute any third-party models, datasets, Spaces, files, licenses, model cards, or repository metadata shown through the application.
+
+Users are solely responsible for how they use this software, including compliance with repository licenses, gated model terms, organization policies, local laws, Hugging Face account rules, API limits, storage usage, and any downstream use of downloaded files. The maintainers do not accept responsibility for license violations, restricted content access, data loss, corrupted downloads, account or token issues, service interruptions, API changes, or any damages resulting from use of the application.
+
+ModelDock is provided as-is, without warranty of any kind. Always review the original repository page, license, and usage terms before downloading or using any model, dataset, or Space.
+
 <img width="2548" height="1331" alt="Screenshot_5" src="https://github.com/user-attachments/assets/6aaf2e87-2b3e-4a77-86fc-4610aa8eb92d" />
 
 <img width="2555" height="1338" alt="Screenshot_6" src="https://github.com/user-attachments/assets/cf892d46-eb6e-4148-9d12-b36f2b211528" />
