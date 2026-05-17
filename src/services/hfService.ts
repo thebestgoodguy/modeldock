@@ -1,5 +1,14 @@
 // Developer / Creator: Sadri ERCAN
-import { AppSettings, DiskSpaceInfo, HFFile, HFRepoInfo, RepoType, UpdateInfo } from '../types';
+import {
+  AdvancedSearchOptions,
+  AppSettings,
+  DiskSpaceInfo,
+  HFFile,
+  HFRepoInfo,
+  HFSearchTagsByType,
+  RepoType,
+  UpdateInfo
+} from '../types';
 
 declare global {
   interface Window {
@@ -58,11 +67,129 @@ function repoApiUrl(repoType: RepoType, repoId = '') {
   return repoId ? `${BASE_URL}/${endpoint}/${repoId}` : `${BASE_URL}/${endpoint}`;
 }
 
+function searchTagsApiUrl(repoType: RepoType) {
+  if (repoType === 'model') return `${BASE_URL}/models-tags-by-type`;
+  if (repoType === 'dataset') return `${BASE_URL}/datasets-tags-by-type`;
+  return null;
+}
+
 function repoReadmeUrl(repoType: RepoType, repoId: string) {
   const prefix = REPO_ENDPOINTS[repoType].webPrefix;
   return prefix
     ? `${WEB_URL}/${prefix}/${repoId}/raw/main/README.md`
     : `${WEB_URL}/${repoId}/raw/main/README.md`;
+}
+
+function modelRawFileUrl(repoId: string, filePath: string) {
+  return `${WEB_URL}/${repoId}/raw/main/${filePath}`;
+}
+
+const contextLengthCache = new Map<string, number | null>();
+const contextLengthKeys = new Set([
+  'context_length',
+  'max_context_length',
+  'max_position_embeddings',
+  'model_max_length',
+  'n_positions',
+  'n_ctx',
+  'seq_length',
+  'max_seq_len',
+  'max_sequence_length',
+  'sequence_length',
+  'sliding_window',
+  'max_source_positions',
+  'max_target_positions'
+]);
+
+function toValidContextLength(value: unknown): number | null {
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string'
+      ? Number(value.replace(/,/g, '').trim())
+      : Number.NaN;
+
+  if (!Number.isFinite(parsed)) return null;
+  const rounded = Math.floor(parsed);
+  if (rounded <= 0 || rounded > 10_000_000) return null;
+  return rounded;
+}
+
+function extractContextLength(data: any): number | null {
+  const lengths: number[] = [];
+
+  const visit = (value: any) => {
+    if (!value || typeof value !== 'object') return;
+    Object.entries(value).forEach(([key, entry]) => {
+      if (contextLengthKeys.has(key)) {
+        const length = toValidContextLength(entry);
+        if (length) lengths.push(length);
+      }
+      if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+        visit(entry);
+      }
+    });
+  };
+
+  visit(data);
+
+  const tags = Array.isArray(data?.tags) ? data.tags : [];
+  tags.forEach((tag) => {
+    if (typeof tag !== 'string') return;
+    const match = tag.match(/(?:context(?:_length)?|model_max_length|max_position_embeddings|n_ctx):(\d[\d,]*)/i);
+    const length = match ? toValidContextLength(match[1]) : null;
+    if (length) lengths.push(length);
+  });
+
+  return lengths.length > 0 ? Math.max(...lengths) : null;
+}
+
+async function fetchJsonOrNull(url: string, token?: string) {
+  try {
+    const response = await fetch(url, { headers: authHeaders(token) });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function getModelContextLength(repo: any, token?: string): Promise<number | null> {
+  const repoId = repo.id || repo.modelId || repo.name || '';
+  if (!repoId) return null;
+  if (contextLengthCache.has(repoId)) return contextLengthCache.get(repoId) ?? null;
+
+  let contextLength = extractContextLength(repo);
+  if (!contextLength) {
+    const config = await fetchJsonOrNull(modelRawFileUrl(repoId, 'config.json'), token);
+    contextLength = extractContextLength(config);
+  }
+  if (!contextLength) {
+    const tokenizerConfig = await fetchJsonOrNull(modelRawFileUrl(repoId, 'tokenizer_config.json'), token);
+    contextLength = extractContextLength(tokenizerConfig);
+  }
+
+  contextLengthCache.set(repoId, contextLength);
+  return contextLength;
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
 }
 
 function normalizeRepoInfo(data: any, repoType: RepoType): HFRepoInfo {
@@ -179,6 +306,65 @@ export const HuggingFaceService = {
       { headers: authHeaders(token) }
     );
     return readJsonResponse<any[]>(response, 'Search failed');
+  },
+
+  async searchAdvancedRepos(options: AdvancedSearchOptions, token?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    const limit = Math.min(Math.max(options.limit || 50, 1), 200);
+    const shouldFilterByContext = options.repoType === 'model' && Boolean(options.contextMin);
+    const apiLimit = shouldFilterByContext ? 200 : limit;
+
+    if (options.query?.trim()) params.set('search', options.query.trim());
+    if (options.author?.trim()) params.set('author', options.author.trim());
+    if (options.sort) params.set('sort', options.sort);
+    if (options.direction) params.set('direction', options.direction);
+    if (options.full) params.set('full', 'true');
+    params.set('limit', String(apiLimit));
+
+    if (options.task) {
+      if (options.repoType === 'model') {
+        params.set('pipeline_tag', options.task);
+      } else {
+        params.append('filter', options.task);
+      }
+    }
+
+    if (options.sdk) {
+      if (options.repoType === 'space') {
+        params.set('sdk', options.sdk);
+      } else {
+        params.append('filter', options.sdk);
+      }
+    }
+
+    (options.filters || []).forEach((filter) => {
+      if (filter) params.append('filter', filter);
+    });
+
+    const response = await fetch(`${repoApiUrl(options.repoType)}?${params.toString()}`, {
+      headers: authHeaders(token)
+    });
+    const results = await readJsonResponse<any[]>(response, 'Advanced search failed');
+
+    if (!shouldFilterByContext || !options.contextMin) return results;
+
+    const enriched = await mapWithConcurrency(results, 8, async (item) => {
+      const contextLength = await getModelContextLength(item, token);
+      return { ...item, contextLength };
+    });
+
+    return enriched
+      .filter((item) => (item.contextLength || 0) >= options.contextMin!)
+      .slice(0, limit);
+  },
+
+  async getSearchTags(repoType: RepoType, token?: string): Promise<HFSearchTagsByType> {
+    const url = searchTagsApiUrl(repoType);
+    if (!url) return {};
+
+    const response = await fetch(url, { headers: authHeaders(token) });
+    if (!response.ok) return {};
+    return readJsonResponse<HFSearchTagsByType>(response, 'Failed to load search filters');
   },
 
   async listModelsByAuthor(author: string, token?: string): Promise<any[]> {

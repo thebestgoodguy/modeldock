@@ -1,4 +1,5 @@
 export type RepoType = 'model' | 'dataset' | 'space';
+export type AppView = 'home' | 'search' | 'active' | 'downloads';
 export type DownloadStatus = 'queued' | 'starting' | 'downloading' | 'paused' | 'completed' | 'failed' | 'canceled' | 'unknown';
 
 export interface HFFile {
@@ -61,4 +62,28 @@ export interface UpdateInfo {
   changelog: string;
   downloadUrl: string;
   releaseUrl: string;
+}
+
+export interface HFSearchTag {
+  id: string;
+  label: string;
+  type: string;
+  subType?: string;
+  clickable?: boolean;
+}
+
+export type HFSearchTagsByType = Record<string, HFSearchTag[]>;
+
+export interface AdvancedSearchOptions {
+  repoType: RepoType;
+  query?: string;
+  author?: string;
+  task?: string;
+  sdk?: string;
+  filters?: string[];
+  contextMin?: number;
+  sort?: string;
+  direction?: '1' | '-1';
+  limit?: number;
+  full?: boolean;
 }

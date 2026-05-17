@@ -4,6 +4,7 @@ import { TopBar } from './components/TopBar';
 import { SidebarLeft } from './components/SidebarLeft';
 import { SidebarRight } from './components/SidebarRight';
 import { Canvas } from './components/Canvas';
+import { AdvancedSearchPage } from './components/AdvancedSearchPage';
 import { SettingsModal } from './components/SettingsModal';
 import { LogModal } from './components/LogModal';
 import { UpdateModal } from './components/UpdateModal';
@@ -11,7 +12,7 @@ import { ToastContainer, Toast, ToastType } from './components/ToastContainer';
 import { motion, AnimatePresence } from 'motion/react';
 import { Download, Loader2, Zap } from 'lucide-react';
 import { HuggingFaceService } from './services/hfService';
-import { AppSettings, DiskSpaceInfo, DownloadItem, HFFile, HFRepoInfo, RepoType, UpdateInfo } from './types';
+import { AppSettings, AppView, DiskSpaceInfo, DownloadItem, HFFile, HFRepoInfo, RepoType, UpdateInfo } from './types';
 import packageJson from '../package.json';
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -44,7 +45,8 @@ export default function App() {
   const [lmStudioPreferredPath, setLmStudioPreferredPath] = useState('');
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [downloadHistory, setDownloadHistory] = useState<DownloadItem[]>([]);
-  const [view, setView] = useState<'home' | 'active' | 'downloads'>('home');
+  const [view, setView] = useState<AppView>('home');
+  const [repoReturnView, setRepoReturnView] = useState<'home' | 'search'>('home');
   const [isStartingDownload, setIsStartingDownload] = useState(false);
   const [diskInfo, setDiskInfo] = useState<DiskSpaceInfo | null>(null);
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
@@ -186,8 +188,12 @@ export default function App() {
   };
 
   const backToResults = () => {
+    const targetView = repoReturnView;
     resetRepoView();
-    setView('home');
+    setView(targetView);
+    if (targetView === 'home') {
+      setRepoReturnView('home');
+    }
   };
 
   const handleRepoTypeChange = (nextType: RepoType) => {
@@ -199,13 +205,14 @@ export default function App() {
   const handleSearch = async (query: string) => {
     if (!query) return;
     setView('home');
+    setRepoReturnView('home');
     setLoading(true);
     setSearchResults([]);
     resetRepoView();
 
     try {
       if (query.includes('/')) {
-        await selectRepo(query, repoType);
+        await selectRepo(query, repoType, 'home');
         return;
       }
 
@@ -231,11 +238,15 @@ export default function App() {
   const clearSearch = () => {
     resetRepoView();
     setSearchResults([]);
+    setRepoReturnView('home');
     setView('home');
   };
 
-  const selectRepo = async (repoId: string, selectedRepoType: RepoType = repoType) => {
-    setView('home');
+  const selectRepo = async (
+    repoId: string,
+    selectedRepoType: RepoType = repoType,
+    returnView: 'home' | 'search' = 'home'
+  ) => {
     setLoading(true);
     setDiskInfo(null);
     try {
@@ -256,9 +267,11 @@ export default function App() {
       loadSavedRepos();
 
       setRepo({ ...info, repoType: selectedRepoType });
+      setRepoReturnView(returnView);
       setRepoType(selectedRepoType);
       setFiles(fileList);
       setReadme(readmeText);
+      setView('home');
     } catch (err: any) {
       addToast(err.message || 'Failed to load repository', 'error');
     } finally {
@@ -368,6 +381,7 @@ export default function App() {
       setLogDetails(null);
       setIsLogModalOpen(false);
       setSearchResults([]);
+      setRepoReturnView('home');
       resetRepoView();
       setView('home');
       addToast('App data reset', 'success');
@@ -417,8 +431,11 @@ export default function App() {
     }
   };
 
-  const handleViewChange = (newView: 'home' | 'active' | 'downloads') => {
+  const handleViewChange = (newView: AppView) => {
     setView(newView);
+    if (newView !== 'search') {
+      setRepoReturnView('home');
+    }
     if (newView === 'home') {
       resetRepoView();
       setSearchResults([]);
@@ -492,6 +509,7 @@ export default function App() {
     () => downloadHistory.filter((item) => item.status === 'failed' || item.status === 'canceled').length,
     [downloadHistory]
   );
+  const keepAdvancedSearchMounted = view === 'search' || (repoReturnView === 'search' && Boolean(repo));
 
   return (
     <div className="h-screen w-screen bg-[#09090b] text-[#e0e0e0] font-sans flex flex-col overflow-hidden select-none">
@@ -525,39 +543,54 @@ export default function App() {
           downloadPath={settings.download_path}
           currentVersion={appVersion}
         />
-        <Canvas
-          view={view}
-          repo={repo}
-          repoType={repoType}
-          files={files}
-          readme={readme}
-          searchResults={searchResults}
-          downloadHistory={downloadHistory}
-          onToggleFile={toggleFile}
-          onSetFileSelection={setFileSelection}
-          onClearSelected={clearSelectedFiles}
-          onSelectRepo={(id) => selectRepo(id, repoType)}
-          onBack={backToResults}
-          onOpenFolder={handleOpenFolder}
-          onCancelDownload={cancelActiveDownload}
-          onPauseDownload={pauseDownload}
-          onResumeDownload={resumeDownload}
-          onRetryDownload={retryDownload}
-          onDeleteDownload={deleteDownloadItem}
-          onDeletePhysicalDownload={deletePhysicalDownload}
-          onOpenLogs={openLogs}
-          loading={loading}
-        />
-        <SidebarRight
-          downloadHistory={downloadHistory}
-          onClearHistory={clearDownloadHistory}
-          onDeleteDownload={deleteDownloadItem}
-          onCancelDownload={cancelActiveDownload}
-          onPauseDownload={pauseDownload}
-          onResumeDownload={resumeDownload}
-          onRetryDownload={retryDownload}
-          onOpenLogs={openLogs}
-        />
+        {keepAdvancedSearchMounted && (
+          <div className={view === 'search' ? 'flex flex-1 min-w-0' : 'hidden'}>
+            <AdvancedSearchPage
+              repoType={repoType}
+              hfToken={settings.hf_token}
+              onRepoTypeChange={handleRepoTypeChange}
+              onSelectRepo={(id, selectedRepoType) => selectRepo(id, selectedRepoType, 'search')}
+              onNotify={addToast}
+            />
+          </div>
+        )}
+        {view !== 'search' && (
+          <Canvas
+            view={view}
+            repo={repo}
+            repoType={repoType}
+            files={files}
+            readme={readme}
+            searchResults={searchResults}
+            downloadHistory={downloadHistory}
+            onToggleFile={toggleFile}
+            onSetFileSelection={setFileSelection}
+            onClearSelected={clearSelectedFiles}
+            onSelectRepo={(id) => selectRepo(id, repoType, 'home')}
+            onBack={backToResults}
+            onOpenFolder={handleOpenFolder}
+            onCancelDownload={cancelActiveDownload}
+            onPauseDownload={pauseDownload}
+            onResumeDownload={resumeDownload}
+            onRetryDownload={retryDownload}
+            onDeleteDownload={deleteDownloadItem}
+            onDeletePhysicalDownload={deletePhysicalDownload}
+            onOpenLogs={openLogs}
+            loading={loading}
+          />
+        )}
+        {view !== 'search' && (
+          <SidebarRight
+            downloadHistory={downloadHistory}
+            onClearHistory={clearDownloadHistory}
+            onDeleteDownload={deleteDownloadItem}
+            onCancelDownload={cancelActiveDownload}
+            onPauseDownload={pauseDownload}
+            onResumeDownload={resumeDownload}
+            onRetryDownload={retryDownload}
+            onOpenLogs={openLogs}
+          />
+        )}
       </div>
 
       <SettingsModal

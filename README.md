@@ -12,6 +12,11 @@ ModelDock is a local Hugging Face downloader for models, datasets, and Spaces. I
 ## Highlights
 
 - Search Hugging Face models, datasets, and Spaces
+- Advanced Search page for models, datasets, and Spaces with rich Hugging Face filters
+- Dynamic filter discovery from Hugging Face tag metadata with local fallbacks
+- Context length filtering for text-generation models, including 2K through 256K+ windows
+- Paginated Advanced Search results with stable result counts and page navigation
+- Search result detail flow that returns back to the original results view without losing Advanced Search state
 - Direct repository lookup by `author/repo`
 - Better search result cards with owner, type, likes, downloads, and update date
 - File tree view with folder grouping
@@ -94,6 +99,8 @@ Open:
 http://localhost:3000
 ```
 
+Use **Advanced Search** from the left sidebar or the quick menu to browse repositories with structured filters, sorting, result limits, context length filtering, and paginated results.
+
 ## Run As Electron App
 
 Build the frontend and open Electron:
@@ -146,6 +153,7 @@ modeldock/
     logo.png
   src/
     components/
+      AdvancedSearchPage.tsx
     services/
     App.tsx
     index.css

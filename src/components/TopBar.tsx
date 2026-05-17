@@ -13,11 +13,12 @@ import {
   LayoutGrid,
   Search,
   Settings,
+  SlidersHorizontal,
   Sparkles,
   Terminal,
   X
 } from 'lucide-react';
-import { RepoType, UpdateInfo } from '../types';
+import { AppView, RepoType, UpdateInfo } from '../types';
 
 const repoTypeItems: { id: RepoType; label: string; icon: typeof Box }[] = [
   { id: 'model', label: 'Model', icon: Box },
@@ -45,7 +46,7 @@ export const TopBar = ({
   onOpenSettings: () => void;
   onOpenLogs: () => void;
   onOpenDownloadsFolder: () => void;
-  onNavigate: (view: 'home' | 'active' | 'downloads') => void;
+  onNavigate: (view: AppView) => void;
   hasLogs: boolean;
   activeCount: number;
   historyCount: number;
@@ -168,6 +169,10 @@ export const TopBar = ({
               <button onClick={() => runQuickAction(() => onNavigate('home'))} className="quick-menu-item">
                 <Home className="w-4 h-4 text-hf-purple" />
                 <span>Dashboard</span>
+              </button>
+              <button onClick={() => runQuickAction(() => onNavigate('search'))} className="quick-menu-item">
+                <SlidersHorizontal className="w-4 h-4 text-violet-400" />
+                <span>Advanced Search</span>
               </button>
               <button onClick={() => runQuickAction(() => onNavigate('active'))} className="quick-menu-item">
                 <DownloadCloud className="w-4 h-4 text-cyan-400" />

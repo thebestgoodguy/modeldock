@@ -11,18 +11,20 @@ import {
   History,
   Home,
   Layers3,
+  Search,
   Trash2,
   XCircle,
   Zap
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { AppView } from '../types';
 
 interface SidebarLeftProps {
   savedRepos: any[];
   onSelectRepo: (id: string) => void;
   onDeleteRepo: (id: string) => void;
-  currentView: 'home' | 'active' | 'downloads';
-  onViewChange: (view: 'home' | 'active' | 'downloads') => void;
+  currentView: AppView;
+  onViewChange: (view: AppView) => void;
   onOpenDownloadsFolder: () => void;
   activeCount: number;
   completedCount: number;
@@ -46,8 +48,9 @@ export const SidebarLeft = ({
   downloadPath,
   currentVersion
 }: SidebarLeftProps) => {
-  const menuItems = [
+  const menuItems: { id: AppView; icon: typeof Home; label: string; count: number | null }[] = [
     { id: 'home', icon: Home, label: 'Dashboard', count: null },
+    { id: 'search', icon: Search, label: 'Advanced Search', count: null },
     { id: 'active', icon: DownloadCloud, label: 'Active Queue', count: activeCount },
     { id: 'downloads', icon: History, label: 'Library', count: historyCount }
   ];
@@ -61,7 +64,7 @@ export const SidebarLeft = ({
         {menuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onViewChange(item.id as any)}
+            onClick={() => onViewChange(item.id)}
             className={`flex items-center justify-between px-4 py-2.5 rounded-2xl transition-all duration-300 group ${
               currentView === item.id
                 ? 'bg-hf-purple/10 text-hf-purple'
