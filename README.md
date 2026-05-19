@@ -182,7 +182,7 @@ modeldock/
 
 ## License
 
-This project is maintained by **Sadri ERCAN**. Add a license file before public distribution.
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). Under these terms, you are free to share and adapt the software, provided you give appropriate credit to **Sadri ERCAN** and link back to the official repository. Commercial use, sales, or monetization of this software is strictly prohibited. See the [LICENSE](LICENSE) file for details.
 
 ---
 
