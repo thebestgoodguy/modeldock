@@ -1,198 +1,191 @@
 # ModelDock
 
-ModelDock is a local Hugging Face downloader for models, datasets, and Spaces. It gives you a clean desktop-style interface for searching repositories, inspecting files, reading model cards, queueing downloads, and managing local model folders.
+<div align="center">
 
-## Disclaimer
+### Hugging Face model, dataset, and Space downloader with multi-threaded queueing, live progress, and seamless local folder integration in one desktop-style workspace.
 
-ModelDock is an independent community project and is not affiliated with, endorsed by, sponsored by, or officially supported by Hugging Face, Inc. or the official Hugging Face platform. The name "Hugging Face" is used only to describe compatibility with publicly available Hugging Face repository APIs and model, dataset, and Space repositories.
+[![GitHub release](https://img.shields.io/github/v/release/thebestgoodguy/modeldock?style=flat-square&color=blue)](https://github.com/thebestgoodguy/modeldock/releases)
+[![License](https://img.shields.io/github/license/thebestgoodguy/modeldock?style=flat-square&color=orange)](https://github.com/thebestgoodguy/modeldock/blob/main/LICENSE)
+[![Node Version](https://img.shields.io/badge/node-%3E%3D20-green?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![React Version](https://img.shields.io/badge/react-19-blue?style=flat-square&logo=react)](https://react.dev/)
+[![Electron Version](https://img.shields.io/badge/electron-35-47848F?style=flat-square&logo=electron)](https://www.electronjs.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
 
-This project is intended to help users organize their own local model repository, inspect repository files, and make download workflows easier from a desktop-style interface. ModelDock does not host, own, verify, or redistribute any third-party models, datasets, Spaces, files, licenses, model cards, or repository metadata shown through the application.
+[Quick Start](#quick-start) | [Key Features](#key-features) | [Tech Stack](#tech-stack) | [Installation](#installation-and-setup) | [Configuration](#configuration) | [License](#license)
 
-Users are solely responsible for how they use this software, including compliance with repository licenses, gated model terms, organization policies, local laws, Hugging Face account rules, API limits, storage usage, and any downstream use of downloaded files. The maintainers do not accept responsibility for license violations, restricted content access, data loss, corrupted downloads, account or token issues, service interruptions, API changes, or any damages resulting from use of the application.
+</div>
 
-ModelDock is provided as-is, without warranty of any kind. Always review the original repository page, license, and usage terms before downloading or using any model, dataset, or Space.
+---
 
-<img width="2548" height="1331" alt="Screenshot_5" src="https://github.com/user-attachments/assets/6aaf2e87-2b3e-4a77-86fc-4610aa8eb92d" />
+> [!IMPORTANT]
+> **Disclaimer:** ModelDock is an independent community project and is not affiliated with, endorsed by, sponsored by, or officially supported by Hugging Face, Inc. or the official Hugging Face platform. The name "Hugging Face" is used only to describe compatibility with publicly available Hugging Face repository APIs.
+>
+> Users are solely responsible for how they use this software, including compliance with repository licenses, gated model terms, organization policies, API limits, and storage usage.
 
-<img width="2555" height="1338" alt="Screenshot_6" src="https://github.com/user-attachments/assets/cf892d46-eb6e-4148-9d12-b36f2b211528" />
+---
 
-<img width="2552" height="1341" alt="Screenshot_7" src="https://github.com/user-attachments/assets/c8751cea-5c2c-417b-9087-ff636c0b8000" />
+## Screenshots
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/6aaf2e87-2b3e-4a77-86fc-4610aa8eb92d" width="90%" alt="ModelDock Search Dashboard" />
+</p>
 
-## Highlights
+<details>
+  <summary>📸 Click here to view more screenshots</summary>
+  <br>
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/cf892d46-eb6e-4148-9d12-b36f2b211528" width="90%" alt="ModelDock Queue Management" />
+    <br><br>
+    <img src="https://github.com/user-attachments/assets/c8751cea-5c2c-417b-9087-ff636c0b8000" width="90%" alt="ModelDock Preferences" />
+  </p>
+</details>
 
-- Search Hugging Face models, datasets, and Spaces
-- Advanced Search page for models, datasets, and Spaces with rich Hugging Face filters
-- Dynamic filter discovery from Hugging Face tag metadata with local fallbacks
-- Context length filtering for text-generation models, including 2K through 256K+ windows
-- Paginated Advanced Search results with stable result counts and page navigation
-- Search result detail flow that returns back to the original results view without losing Advanced Search state
-- Direct repository lookup by `author/repo`
-- Better search result cards with owner, type, likes, downloads, and update date
-- File tree view with folder grouping
-- File filters for GGUF, SafeTensors, BIN, JSON, and large files
-- Select visible files or download a full repository
-- Download queue with configurable concurrency
-- Pause, resume, cancel, and retry downloads
-- Live progress, speed, ETA, and task status
-- **Real-time Downloaded Size Tracking:** Live extraction of downloaded vs total file size (e.g., `11.0M/4.48G`) directly from `tqdm` logs, displayed alongside download speed
-- **Clean Startup & Session Recovery:** Automatic pause of interrupted or orphaned downloads on backend startup to ensure a pristine live queue
-- **Intelligent Python Runtime Discovery:** Automatic physical scanning (`fs.existsSync`) of system paths, Scoop installations, and AppData directories for bulletproof ASAR/Electron packaging
-- **Enhanced Log Observability:** Absolute file paths for both Python interpreter and downloader scripts recorded in the live terminal stream
-- **Automated GitHub Releases Update System:** Background polling of GitHub Releases API (`latest`), dynamic sidebar version indicator, and a beautiful premium Update Modal with full markdown changelog rendering and direct download links
-- **Dynamic Application Versioning:** Automatic extraction of runtime version from `package.json` and Electron preload (`window.modelDock.version`), eliminating hardcoded version strings across all build targets
-- **Native Directory Browsing (`selectFolder`):** Dedicated **Browse** button next to Download Directory and LM Studio Models inputs, featuring a dual-mode picker (native Electron dialog in packaged builds, PowerShell `FolderBrowserDialog` fallback in standalone browser mode)
-- **LM Studio Use/Reset Toggle:** Intuitive toggle button that binds the download path to LM Studio and transforms into a red `Reset` button to instantly restore default paths without losing previously downloaded models
-- **Complete App Data Reset:** Fully re-initializes SQLite settings table and dynamically reloads frontend preferences without requiring an application restart
-- Global logs modal with clear logs support
-- README / model card preview with Markdown and HTML rendering
-- Disk space check before queueing downloads
-- LM Studio model directory detection and quick path setup
-- Download history and physical folder scan
-- Open downloaded folders from the app
-- Hugging Face token support for gated/private repositories
-- Optional Hugging Face mirror support in backend
-- Electron packaging support for Windows desktop builds
+---
 
+## Quick Start
 
+1. **Launch the application** (via source code or pre-compiled Windows executable).
+2. **Search** for any Model, Dataset, or Space using simple queries or the **Advanced Search** panel.
+3. **Explore files** in the interactive repository file tree, filter by formats (GGUF, SafeTensors, etc.), and select files to download.
+4. **Configure paths** in Preferences to link ModelDock directly with your **LM Studio** model directory.
+5. **Manage downloads** through the live queue with pause, resume, cancel, and speed limits.
 
-  and more...
+---
 
+## Key Features
 
+ModelDock provides a comprehensive desktop-style cockpit for managing Hugging Face assets.
+
+### 🔍 Search & Discovery
+- **Multi-Repo Search:** Browse models, datasets, and Spaces from a single unified workspace.
+- **Advanced Metadata Filters:** Query using rich Hugging Face tags, categories, libraries, and sort options.
+- **Context Length Filters:** Refine text-generation models by context window sizes (from `2K` up to `256K+`).
+- **Dynamic Tag Discovery:** Explore search tags dynamically loaded from Hugging Face metadata with robust local fallbacks.
+- **Stateful Navigation:** Smooth transitions between search page results and repository details without losing pagination or query state.
+
+### 📥 Download Engine & Observability
+- **Granular Downloader Queue:** Full control over downloads with start, pause, resume, cancel, and retry capabilities.
+- **Real-Time Speed & Progress:** Visualizes active downloading files with live speeds, ETAs, and task states.
+- **Tqdm Log Parsing:** Extracts live progress details (e.g., `11.0M/4.48G`) directly from stdout streams.
+- **Pre-download Disk Scan:** Automatically checks local drive storage space before queuing files to prevent out-of-disk crashes.
+- **Multi-Threaded Concurrency:** Configurable parallel download queue slots and worker execution.
+
+### 💻 Desktop & Integrations
+- **LM Studio Integration:** Seamlessly sync your downloads directly with your local LM Studio models directory, featuring an easy-to-use directory lock/reset.
+- **Native Folder Browsing:** Dedicated **Browse** button with dual-mode folder pickers (uses native Electron shell picker in packages, PowerShell script fallback in browser dev modes).
+- **Auto-Update Engine:** Background check for latest releases via the GitHub API, showing custom Markdown changelogs inside a custom dialog.
+- **Complete App Reset:** Instantly re-initializes SQLite database tables and frontend storage configs without needing an app restart.
+- **Systematic Session Recovery:** Auto-pauses orphaned download workers on app launch to preserve system stability.
+
+---
 
 ## Tech Stack
 
-- React 19
-- Vite
-- TypeScript
-- Tailwind CSS
-- Express
-- SQLite via `better-sqlite3`
-- Python `huggingface_hub`
-- Electron / electron-builder
+| Layer | Technologies | Role / Description |
+| :--- | :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Motion | Responsive desktop GUI, smooth transitions & animations |
+| **Desktop Shell** | Electron 35, electron-builder | Native OS wrapper, file explorer integration, auto-updater |
+| **Backend** | Express.js, SQLite (`better-sqlite3`), TSX | Settings store, queue management, process orchestrator |
+| **Downloader** | Python 3.10+, `huggingface_hub` | High-speed, multi-chunk, resumable Hugging Face API agent |
 
-## Requirements
+---
 
-- Node.js 20+
-- Python 3.10+
-- `huggingface_hub` installed for Python:
+## Installation and Setup
 
+Ensure you have [Node.js v20+](https://nodejs.org/) and [Python v3.10+](https://www.python.org/) installed.
+
+### 1. Clone & Install Dependencies
 ```bash
+# Clone the repository
+git clone https://github.com/thebestgoodguy/modeldock.git
+cd modeldock
+
+# Install Node dependencies
+npm install
+
+# Install Hugging Face Python library
 pip install huggingface_hub
 ```
 
-## Install
+### 2. Running in Development Mode
+You can launch the frontend and backend API servers separately for live reloading:
 
 ```bash
-git clone https://github.com/thebestgoodguy/modeldock.git
-cd modeldock
-npm install
-```
-
-## Run In Development
-
-Start the backend:
-
-```bash
+# Terminal 1: Start backend API server
 npm run start:api
-```
 
-Start the frontend:
-
-```bash
+# Terminal 2: Start Vite web frontend
 npm run dev
 ```
+Once both are running, open your browser at **[http://localhost:3000](http://localhost:3000)**.
 
-Open:
-
-```text
-http://localhost:3000
-```
-
-Use **Advanced Search** from the left sidebar or the quick menu to browse repositories with structured filters, sorting, result limits, context length filtering, and paginated results.
-
-## Run As Electron App
-
-Build the frontend and open Electron:
-
+### 3. Launching as a Desktop Electron App
+Build the frontend assets and run ModelDock inside its Electron shell:
 ```bash
 npm run electron
 ```
 
-## Package For Windows
-
-Create a Windows installer:
+### 4. Packaging for Production
+To package ModelDock into a standalone Windows desktop executable:
 
 ```bash
+# Generate a Windows Setup Installer (.exe)
 npm run package:win
-```
 
-Create an unpacked directory build:
-
-```bash
+# Generate a portable, unpacked directory build
 npm run package:dir
 ```
+The packaging artifacts will be created in the `release/` directory.
 
-Build output is written to:
-
-```text
-release/
-```
+---
 
 ## Configuration
 
-Open **Preferences** inside the app to configure:
+Open the **Preferences** panel in ModelDock to configure your environment:
+- **Hugging Face Token:** Provide a token to search and download private or gated repositories.
+- **Default Download Path:** Set the destination directory for downloaded files.
+- **LM Studio Integration:** Map your model folder directly to LM Studio's path for instant model loading.
+- **Queue Concurrency:** Limit simultaneous active downloads.
+- **Worker Management:** Tweak the number of parallel Python download helpers and download speeds.
 
-- Hugging Face API token
-- Default download directory
-- LM Studio models directory
-- Concurrent queue slots
-- Python worker count
-- Soft speed limit
-
-The backend stores local settings and download history in SQLite.
+---
 
 ## Project Structure
 
+A high-level view of the repository layout:
+
 ```text
 modeldock/
-  electron/
-    main.cjs
-    preload.cjs
-  public/
-    logo.png
-  src/
-    components/
-      AdvancedSearchPage.tsx
-    services/
-    App.tsx
-    index.css
-  downloader.py
-  server.js
-  package.json
-  README.md
+├── electron/          # Electron main and preload entry points
+│   ├── main.cjs       # Main process lifecycle and IPC handlers
+│   └── preload.cjs    # Sandbox bridge and version exposures
+├── public/            # Static assets and desktop icons
+├── src/               # React 19 Frontend source code
+│   ├── components/    # Page components (Search, Queue, Settings)
+│   ├── App.tsx        # Main application layout
+│   └── index.css      # Core styling system (Tailwind CSS v4)
+├── downloader.py      # Python script containing the download worker
+├── server.js          # Express API server with SQLite persistence
+├── package.json       # App manifests and script configurations
+└── README.md          # Project documentation
 ```
 
-## Useful Scripts
+---
 
-```bash
-npm run dev          # Start Vite frontend
-npm run start:api    # Start Express backend
-npm run lint         # TypeScript check
-npm run build        # Build frontend
-npm run electron     # Build and run Electron
-npm run package:win  # Build Windows installer
-```
+## Technical Details
 
-## Notes
+- **ASAR Path Correction:** The backend automatically resolves absolute script paths (`resources/downloader.py`) and discovers system Python binaries inside packaged installations.
+- **Queue Protection:** Any active downloads that were interrupted due to app shutdown are automatically paused on startup to avoid corrupting files.
+- **Hugging Face Mirroring:** You can configure custom Hugging Face proxy endpoints (e.g. `HF_ENDPOINT`) directly in your backend settings or `.env` files.
 
-- Downloads are saved under the configured download directory.
-- Full repository downloads reuse Hugging Face cache behavior where possible.
-- Pause/resume works by stopping the current worker and reusing existing local files on resume.
-- Electron builds include the frontend, backend entry, and Python downloader script.
-- **Electron ASAR Compatibility:** The backend automatically resolves physical script paths (`resources/downloader.py`) and discovers external Python runtimes to ensure bulletproof child process execution in packaged production builds.
-- **Clean Queue Recovery:** If the application is closed while downloads are active or queued, they are automatically paused on next startup so they don't appear as frozen/zombie processes.
+---
 
 ## License
 
-This project is maintained by Sadri ERCAN. Add a license file before public distribution if needed.
+This project is maintained by **Sadri ERCAN**. Add a license file before public distribution.
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/thebestgoodguy">Sadri ERCAN</a>
+</p>
