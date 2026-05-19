@@ -5,7 +5,7 @@
 ### Hugging Face model, dataset, and Space downloader with multi-threaded queueing, live progress, and seamless local folder integration in one desktop-style workspace.
 
 [![GitHub release](https://img.shields.io/github/v/release/thebestgoodguy/modeldock?style=flat-square&color=blue)](https://github.com/thebestgoodguy/modeldock/releases)
-[![License](https://img.shields.io/github/license/thebestgoodguy/modeldock?style=flat-square&color=orange)](https://github.com/thebestgoodguy/modeldock/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-orange?style=flat-square)](https://github.com/thebestgoodguy/modeldock/blob/main/LICENSE)
 [![Node Version](https://img.shields.io/badge/node-%3E%3D20-green?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![React Version](https://img.shields.io/badge/react-19-blue?style=flat-square&logo=react)](https://react.dev/)
 [![Electron Version](https://img.shields.io/badge/electron-35-47848F?style=flat-square&logo=electron)](https://www.electronjs.org/)
